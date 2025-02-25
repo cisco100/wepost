@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS posts (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    tags TEXT[], -- Array of tags
+    user_id VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

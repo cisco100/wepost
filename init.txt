@@ -1,0 +1,50 @@
+# Variables to be set from command line
+FOLDER_NAME ?= default_folder
+REPO_LINK ?= default_repo
+
+# Project structure setup
+.PHONY: setup
+setup:
+	@echo "Creating project structure for $(FOLDER_NAME)..."
+	@mkdir -p $(FOLDER_NAME)/bin
+    @mkdir -p $(FOLDER_NAME)/docs
+	@mkdir -p $(FOLDER_NAME)/cmd/api
+	@mkdir -p $(FOLDER_NAME)/cmd/migrate/migrations
+	@mkdir -p $(FOLDER_NAME)/internal/db
+	@mkdir -p $(FOLDER_NAME)/internal/store
+	@mkdir -p $(FOLDER_NAME)/scripts
+	@mkdir -p $(FOLDER_NAME)/tmp
+	@mkdir -p $(FOLDER_NAME)/web
+
+
+ 
+	
+	# Create main.go with content
+	@echo 'package main\n\nimport (\n\t"log"\n\t"github.com/joho/godotenv"\n)\n\nfunc main() {\n\trootPath := "/home/rawdreamz/pro/go/$(FOLDER_NAME)"\n\t// Load the .env file from the root directory\n\terr := godotenv.Load(rootPath + "/.env")\n\tif err != nil {\n\t\tlog.Fatalf("Error loading .env file from root: %v", err)\n\t}\n}' > $(FOLDER_NAME)/cmd/api/main.go
+	
+	# Create empty api.go
+	@touch $(FOLDER_NAME)/cmd/api/api.go
+	@touch $(FOLDER_NAME)/.env
+	
+	# Create go.mod file
+	@cd $(FOLDER_NAME) && go mod init $(REPO_LINK)/$(FOLDER_NAME)
+	@cd $(FOLDER_NAME) && go mod edit -go=1.21
+	
+	# Create go.sum file with specified content
+	@echo 'github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=\ngithub.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=' > $(FOLDER_NAME)/go.sum
+	
+	# Create docker-compose.yml
+	@echo 'services:\n  postgres:\n    image: postgres:15-alpine\n    container_name: my_postgres\n    environment:\n      POSTGRES_USER: postgres\n      POSTGRES_PASSWORD: postgres\n      POSTGRES_DB: mydb\n    ports:\n      - "5432:5432"\n    volumes:\n      - db_data:/var/lib/postgresql/data\n\nvolumes:\n  db_data:' > $(FOLDER_NAME)/docker-compose.yml
+	
+	# Create Makefile with provided content
+	@echo 'include .env\n\nMIGRATIONS_PATH = ./cmd/migrate/migrations\n\n.PHONY: test\ntest:\n\t@go test -v ./...\n\n.PHONY: migrate-create\nmigration:\n\t@migrate create -seq -ext sql -dir $$(MIGRATIONS_PATH) $$(filter-out $$@,$$(MAKECMDGOALS))\n\n.PHONY: migrate-up\nmigrate-up:\n\t@migrate -path=$$(MIGRATIONS_PATH) -database=$$(DB_ADDR) up\n\n.PHONY: migrate-down\nmigrate-down:\n\t@migrate -path=$$(MIGRATIONS_PATH) -database=$$(DB_ADDR) down $$(filter-out $$@,$$(MAKECMDGOALS))\n\n.PHONY: seed\nseed:\n\t@go run cmd/migrate/seed/main.go\n\n.PHONY: gen-docs\ngen-docs:\n\t@swag init -g ./api/main.go -d cmd,internal && swag fmt' > $(FOLDER_NAME)/Makefile
+	
+	@echo "Project structure created successfully!"
+
+# Help target
+.PHONY: help
+help:
+	@echo "Usage:"
+	@echo "  make setup FOLDER_NAME=your_folder REPO_LINK=your_repo_link"
+	@echo "Example:"
+	@echo "  make setup FOLDER_NAME=myproject REPO_LINK=github.com/username"
