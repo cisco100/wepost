@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS comments(
     user_id VARCHAR(36) NOT NULL,
     comment TEXT NOT NULL,
     created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (post_id) REFERENCES posts (id),
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 
 );

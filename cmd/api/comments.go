@@ -25,7 +25,7 @@ func (app *Application) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	comment := &store.Comment{
 		ID:      uuid.New().String(),
-		PostID:  "f65a2c59-54b5-49e0-9ae2-0c74dcc5772e",
+		PostID:  "49cf699e-be1f-4734-80d1-96ef941d93af",
 		UserID:  "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
 		Comment: payload.Comment,
 	}

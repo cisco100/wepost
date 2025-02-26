@@ -104,3 +104,19 @@ func (ps *PostStore) AllPost(ctx context.Context) ([]Post, error) {
 
 	return posts, nil
 }
+
+func (ps *PostStore) DeletePost(ctx context.Context, postID string) error {
+	query := `DELETE FROM posts WHERE id=$1`
+
+	res, err := ps.db.ExecContext(ctx, query, postID)
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}

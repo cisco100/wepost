@@ -81,3 +81,23 @@ func (app *Application) GetAllPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (app *Application) DeletePost(w http.ResponseWriter, r *http.Request) {
+	idParams := chi.URLParam(r, "postID")
+	ctx := r.Context()
+
+	if err := app.Store.Post.DeletePost(ctx, string(idParams)); err != nil {
+		app.NotExistError(w, r, err)
+	}
+
+	type DeleteMsg struct {
+		PostID string `json:"post_id"`
+		Status int    `json:""status`
+	}
+	var msg DeleteMsg
+	msg = DeleteMsg{PostID: string(idParams), Status: http.StatusNoContent}
+
+	if err := JSONResponse(w, http.StatusOK, msg); err != nil {
+		app.InternalServerError(w, r, err)
+	}
+}
