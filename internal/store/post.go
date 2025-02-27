@@ -116,6 +116,10 @@ func (ps *PostStore) DeletePost(ctx context.Context, postID string) error {
 		query,
 		postID,
 	)
+
+	if err != nil {
+		return err
+	}
 	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
