@@ -16,6 +16,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		r.Post("/posts/comments/create-comment", app.CreateComment)
 
 		//Update URL
+		r.Patch("/posts/post/update/{postID}", app.UpdatePost)
 
 		// Delete URL
 		r.Delete("/posts/delete/{postID}", app.DeletePost)

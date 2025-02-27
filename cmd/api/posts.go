@@ -14,7 +14,7 @@ func (app *Application) CreatePost(w http.ResponseWriter, r *http.Request) {
 	type PostPayload struct {
 		Title   string   `json:"title" validate:"required,min=3,max=100"`
 		Content string   `json:"content" validate:"required,min=10"`
-		Tags    []string `json:"tags" validate:"required,min=1,dive,required,min=1"`
+		Tags    []string `json:"tags"`
 	}
 
 	var payload PostPayload
@@ -92,12 +92,61 @@ func (app *Application) DeletePost(w http.ResponseWriter, r *http.Request) {
 
 	type DeleteMsg struct {
 		PostID string `json:"post_id"`
-		Status int    `json:""status`
+		Status int    `json:"status"`
 	}
-	var msg DeleteMsg
-	msg = DeleteMsg{PostID: string(idParams), Status: http.StatusNoContent}
+	msg := DeleteMsg{PostID: string(idParams), Status: http.StatusNoContent}
 
 	if err := JSONResponse(w, http.StatusOK, msg); err != nil {
 		app.InternalServerError(w, r, err)
 	}
+}
+
+func (app *Application) UpdatePost(w http.ResponseWriter, r *http.Request) {
+	idParams := chi.URLParam(r, "postID")
+	ctx := r.Context()
+	type PostUpdatePayload struct {
+		Title   *string  `json:"title" validate:"omitempty,min=3,max=100"`
+		Content *string  `json:"content" validate:"omitempty,min=10"`
+		Tags    []string `json:"tags" validate:"omitempty"`
+	}
+
+	var payload PostUpdatePayload
+
+	if err := ReadJSON(w, r, &payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+
+	existingPost, err := app.Store.Post.GetPostById(ctx, string(idParams))
+	if err != nil {
+		app.NotExistError(w, r, err)
+		return
+
+	}
+	if payload.Title != nil {
+		existingPost.Title = *payload.Title
+
+	}
+	if payload.Content != nil {
+		existingPost.Content = *payload.Content
+
+	}
+	if payload.Tags != nil {
+		existingPost.Tags = payload.Tags
+
+	}
+
+	if err := app.Store.Post.UpdatePost(ctx, existingPost); err != nil {
+		app.InternalServerError(w, r, err)
+	}
+
+	if err := JSONResponse(w, http.StatusOK, existingPost); err != nil {
+		app.InternalServerError(w, r, err)
+	}
+
 }

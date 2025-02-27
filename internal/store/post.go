@@ -106,9 +106,16 @@ func (ps *PostStore) AllPost(ctx context.Context) ([]Post, error) {
 }
 
 func (ps *PostStore) DeletePost(ctx context.Context, postID string) error {
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 	query := `DELETE FROM posts WHERE id=$1`
 
-	res, err := ps.db.ExecContext(ctx, query, postID)
+	res, err := ps.db.ExecContext(
+		ctx,
+		query,
+		postID,
+	)
 	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
@@ -118,5 +125,36 @@ func (ps *PostStore) DeletePost(ctx context.Context, postID string) error {
 		return ErrNotFound
 	}
 
+	return nil
+}
+
+func (ps *PostStore) UpdatePost(ctx context.Context, post *Post) error {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+	query := `
+	UPDATE posts
+	SET title = $1, content = $2, tags=$3,updated_at=CURRENT_TIMESTAMP	WHERE id = $4 
+	RETURNING id
+	`
+	err := ps.db.QueryRowContext(
+		ctx,
+		query,
+		post.Title,
+		post.Content,
+		pq.Array(post.Tags),
+		post.ID,
+	).Scan(
+		&post.ID,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNotFound
+		default:
+			return err
+		}
+
+	}
 	return nil
 }

@@ -18,6 +18,7 @@ type Storage struct {
 		Create(context.Context, *Post) error
 		GetPostById(context.Context, string) (*Post, error)
 		AllPost(context.Context) ([]Post, error)
+		UpdatePost(context.Context, *Post) error
 		DeletePost(context.Context, string) error
 	}
 	User interface {
