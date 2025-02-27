@@ -6,6 +6,7 @@ import (
 
 func RegisterRoutes(router chi.Router, app *Application) {
 	router.Route("/v1/", func(r chi.Router) {
+		//=============POST ROUTES===========//
 		//Get URL
 		r.Get("/info", app.Meta)
 		r.Get("/posts/getpost/{postID}", app.GetPostById)
@@ -20,6 +21,20 @@ func RegisterRoutes(router chi.Router, app *Application) {
 
 		// Delete URL
 		r.Delete("/posts/delete/{postID}", app.DeletePost)
+
+		//=============POST ROUTES===========//
+
+		//=============USER ROUTES===========//
+		//Get URL
+		r.Get("/users/getuser/{userID}", app.GetUserById)
+
+		//Post URL
+
+		//Update URL
+
+		// Delete URL
+
+		//=============USER ROUTES===========//
 	})
 
 }
