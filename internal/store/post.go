@@ -14,7 +14,7 @@ type PostStore struct {
 
 func (ps *PostStore) Create(ctx context.Context, post *Post) error {
 
-	query := `INSERT INTO posts(id,title,content,tags,user_id) VALUES($1,$2,$3,$4,$5) RETURNING id,user_id,created_at,updated_at`
+	query := `INSERT INTO posts(id,title,content,tags,user_id) VALUES($1,$2,$3,$4,$5) RETURNING id,user_id,created_at,updated_at,version`
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
@@ -31,6 +31,7 @@ func (ps *PostStore) Create(ctx context.Context, post *Post) error {
 		&post.UserID,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.Version,
 	)
 
 	if err != nil {
@@ -57,6 +58,7 @@ func (ps *PostStore) GetPostById(ctx context.Context, postID string) (*Post, err
 		&post.UserID,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.Version,
 	)
 
 	if err != nil {
@@ -94,6 +96,7 @@ func (ps *PostStore) AllPost(ctx context.Context) ([]Post, error) {
 			&post.UserID,
 			&post.CreatedAt,
 			&post.UpdatedAt,
+			&post.Version,
 		)
 		if err != nil {
 			return nil, err
@@ -137,8 +140,8 @@ func (ps *PostStore) UpdatePost(ctx context.Context, post *Post) error {
 	defer cancel()
 	query := `
 	UPDATE posts
-	SET title = $1, content = $2, tags=$3,updated_at=CURRENT_TIMESTAMP	WHERE id = $4 
-	RETURNING id
+	SET title = $1, content = $2, tags=$3,updated_at=CURRENT_TIMESTAMP,version=version+1	WHERE id = $4 and version=$5
+	RETURNING id,version
 	`
 	err := ps.db.QueryRowContext(
 		ctx,
@@ -147,8 +150,10 @@ func (ps *PostStore) UpdatePost(ctx context.Context, post *Post) error {
 		post.Content,
 		pq.Array(post.Tags),
 		post.ID,
+		post.Version,
 	).Scan(
 		&post.ID,
+		&post.Version,
 	)
 
 	if err != nil {
