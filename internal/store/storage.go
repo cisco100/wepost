@@ -30,12 +30,17 @@ type Storage struct {
 		Create(context.Context, *Comment) error
 		GetPostWithComment(context.Context, string) ([]Comment, error)
 	}
+	Follower interface {
+		Follow(context.Context, string, string) error
+		Unfollow(context.Context, string, string) error
+	}
 }
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		Post:    &PostStore{db},
-		User:    &UserStore{db},
-		Comment: &CommentStore{db},
+		Post:     &PostStore{db},
+		User:     &UserStore{db},
+		Comment:  &CommentStore{db},
+		Follower: &FollowStore{db},
 	}
 }

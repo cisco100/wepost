@@ -28,6 +28,10 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		//Get URL
 		r.Get("/users/getuser/{userID}", app.GetUserById)
 
+		//Put URL
+		r.Put("/users/getuser/{userID}/follow", app.FollowUser)
+		r.Put("/users/getuser/{userID}/unfollow", app.UnFollowUser)
+
 		//Post URL
 
 		//Update URL

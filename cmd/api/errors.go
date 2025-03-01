@@ -22,3 +22,9 @@ func (app *Application) NotExistError(w http.ResponseWriter, r *http.Request, er
 
 	WriteJSONError(w, http.StatusBadRequest, "resource not exists")
 }
+
+func (app *Application) ConflictError(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("Conflict Error:: %v path:: %v error:: %v \n", r.Method, r.URL.Path, err.Error())
+
+	WriteJSONError(w, http.StatusConflict, "resource not exists")
+}
