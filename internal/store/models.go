@@ -18,6 +18,7 @@ type Post struct {
 	UpdatedAt string    `json:"updated_at"`
 	Version   int       `json:"version"`
 	Comment   []Comment `json:"coment"`
+	User      User      `json:"user"`
 }
 
 type Comment struct {
@@ -33,4 +34,9 @@ type Follower struct {
 	UserID     string `json:"user_id"`
 	FollowerID string `json:"follower_id"`
 	CreatedAt  string `json:"created_at"`
+}
+
+type PostWithMetaData struct {
+	Post
+	CountComment int64 `json:"count_comment"`
 }

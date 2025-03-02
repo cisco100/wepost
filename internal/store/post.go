@@ -167,3 +167,50 @@ func (ps *PostStore) UpdatePost(ctx context.Context, post *Post) error {
 	}
 	return nil
 }
+
+func (ps *PostStore) GetUserFeed(ctx context.Context, userID string) ([]PostWithMetaData, error) {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	query := `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.version, posts.tags, 
+       users.username, COUNT(comments.id) AS count_comment
+FROM posts
+LEFT JOIN users ON posts.user_id = users.id
+LEFT JOIN comments ON comments.post_id = posts.id 
+LEFT JOIN followers ON followers.follower_id = posts.user_id
+WHERE followers.user_id = $1
+      OR posts.user_id = $1
+GROUP BY posts.id, users.username
+ORDER BY posts.created_at DESC;
+`
+
+	rows, err := ps.db.QueryContext(ctx, query, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	feeds := []PostWithMetaData{}
+	for rows.Next() {
+		var feed PostWithMetaData
+		err := rows.Scan(
+			&feed.Post.ID,
+			&feed.Post.Title,
+			&feed.Post.Content,
+			&feed.Post.CreatedAt,
+			&feed.Post.Version,
+			pq.Array(&feed.Post.Tags),
+			&feed.User.Username,
+			&feed.CountComment,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		feeds = append(feeds, feed)
+	}
+	return feeds, nil
+
+}

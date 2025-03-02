@@ -27,6 +27,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		//=============USER ROUTES===========//
 		//Get URL
 		r.Get("/users/getuser/{userID}", app.GetUserById)
+		r.Get("/users/feeds", app.GetUserFeed)
 
 		//Put URL
 		r.Put("/users/getuser/{userID}/follow", app.FollowUser)

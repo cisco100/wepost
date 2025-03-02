@@ -20,6 +20,7 @@ type Storage struct {
 		AllPost(context.Context) ([]Post, error)
 		UpdatePost(context.Context, *Post) error
 		DeletePost(context.Context, string) error
+		GetUserFeed(context.Context, string) ([]PostWithMetaData, error)
 	}
 	User interface {
 		Create(context.Context, *User) error
