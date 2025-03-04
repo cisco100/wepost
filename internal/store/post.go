@@ -168,7 +168,7 @@ func (ps *PostStore) UpdatePost(ctx context.Context, post *Post) error {
 	return nil
 }
 
-func (ps *PostStore) GetUserFeed(ctx context.Context, userID string) ([]PostWithMetaData, error) {
+func (ps *PostStore) GetUserFeed(ctx context.Context, userID string, pag PaginatedFeedQuery) ([]PostWithMetaData, error) {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
@@ -181,10 +181,11 @@ LEFT JOIN followers ON followers.follower_id = posts.user_id
 WHERE followers.user_id = $1
       OR posts.user_id = $1
 GROUP BY posts.id, users.username
-ORDER BY posts.created_at DESC;
+ORDER BY posts.created_at ` + pag.Sort + `
+LIMIT $2 OFFSET $3;
 `
 
-	rows, err := ps.db.QueryContext(ctx, query, userID)
+	rows, err := ps.db.QueryContext(ctx, query, userID, pag.Limit, pag.Offset)
 
 	if err != nil {
 		return nil, err
