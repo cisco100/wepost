@@ -172,20 +172,37 @@ func (ps *PostStore) GetUserFeed(ctx context.Context, userID string, pag Paginat
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	query := `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.version, posts.tags, 
-       users.username, COUNT(comments.id) AS count_comment
-FROM posts
-LEFT JOIN users ON posts.user_id = users.id
-LEFT JOIN comments ON comments.post_id = posts.id 
-LEFT JOIN followers ON followers.follower_id = posts.user_id
-WHERE followers.user_id = $1
-      OR posts.user_id = $1
-GROUP BY posts.id, users.username
-ORDER BY posts.created_at ` + pag.Sort + `
-LIMIT $2 OFFSET $3;
-`
+	// 	query := `SELECT posts.id, posts.title, posts.content, posts.created_at, posts.version, posts.tags,
+	//        users.username, COUNT(comments.id) AS count_comment
+	// FROM posts
+	// LEFT JOIN users ON posts.user_id = users.id
+	// LEFT JOIN comments ON comments.post_id = posts.id
+	// LEFT JOIN followers ON followers.follower_id = posts.user_id
+	// WHERE followers.user_id = $1
+	//       OR posts.user_id = $1
+	// GROUP BY posts.id, users.username
+	// ORDER BY posts.created_at ` + pag.Sort + `
+	// LIMIT $2 OFFSET $3;
+	// `
 
-	rows, err := ps.db.QueryContext(ctx, query, userID, pag.Limit, pag.Offset)
+	query := `
+		SELECT 
+			posts.id, posts.user_id, posts.title, posts.content, posts.created_at, posts.version, posts.tags,
+			users.username,
+			COUNT(comments.id) AS count_comment
+		FROM posts 
+		LEFT JOIN comments  ON comments.post_id = posts.id
+		LEFT JOIN users  ON posts.user_id = users.id
+		JOIN followers  ON followers.follower_id = posts.user_id OR posts.user_id = $1
+		WHERE 
+			followers.user_id = $1 AND
+			(posts.title ILIKE '%' || $4 || '%' OR posts.content ILIKE '%' || $4 || '%') AND
+			(posts.tags @> $5 OR $5 = '{}')
+		GROUP BY posts.id, users.username
+		ORDER BY posts.created_at ` + pag.Sort + `
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := ps.db.QueryContext(ctx, query, userID, pag.Limit, pag.Offset, pag.Search, pq.Array(pag.Tags))
 
 	if err != nil {
 		return nil, err
