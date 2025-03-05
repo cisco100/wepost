@@ -18,6 +18,7 @@
 # vendor/
 
 # Go workspace file
+/home/cisco/pro/go/wepost/docs/docs.go
 # go.work
 # go.work.sum
 

@@ -9,6 +9,21 @@ import (
 	"github.com/cisco100/wepost/internal/store"
 )
 
+// CreatePost godoc
+//
+//	@Summary		Creates a post
+//	@Description	Creates a post
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		PostPayload	true	"Post payload"
+//	@Success		201		{object}	store.Post
+//	@Failure		400		{object}	error
+//	@Failure		401		{object}	error
+//	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
+//	@Router			/posts/create-post [post]
+
 func (app *Application) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	type PostPayload struct {
@@ -48,6 +63,21 @@ func (app *Application) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+// GetPost godoc
+//
+//	@Summary		Fetches a post
+//	@Description	Fetches a post by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Post ID"
+//	@Success		200	{object}	store.Post
+//	@Failure		404	{object}	error
+//	@Failure		500	{object}	error
+//	@Security		ApiKeyAuth
+//	@Router			/posts/getpost/{postID} [get]
+
 func (app *Application) GetPostById(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "postID")
 
@@ -68,6 +98,19 @@ func (app *Application) GetPostById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAllPost godoc
+//
+//	@Summary		Fetches  post
+//	@Description	Fetches all posts
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	store.Post
+//	@Failure		404	{object}	error
+//	@Failure		500	{object}	error
+//	@Security		ApiKeyAuth
+//	@Router			/posts/getpost/{postID} [get]
+
 func (app *Application) GetAllPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	posts, err := app.Store.Post.AllPost(ctx)
@@ -82,6 +125,19 @@ func (app *Application) GetAllPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeletePost godoc
+//
+//	@Summary		Deletes a post
+//	@Description	Delete a post by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Post ID"
+//	@Success		204	{object}	string
+//	@Failure		404	{object}	error
+//	@Failure		500	{object}	error
+//	@Security		ApiKeyAuth
+//	@Router			/posts/delete/{postID} [delete]
 func (app *Application) DeletePost(w http.ResponseWriter, r *http.Request) {
 	idParams := chi.URLParam(r, "postID")
 	ctx := r.Context()

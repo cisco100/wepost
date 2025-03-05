@@ -10,6 +10,23 @@ import (
 	"github.com/joho/godotenv"
 )
 
+//	@title			WePost API
+//	@version		1.0
+//	@description	Social app for all.
+//	@termsOfService	https://github.com/cisco100/wepost/blob/main/README.md
+
+//	@contact.name	API Support
+//	@contact.url	https://github.com/cisco100/wepost/issues/
+//	@contact.email	web04501@gmail.com
+
+//	@license.name	MIT
+//	@license.url	https://github.com/cisco100/wepost/blob/main/LICENSE
+
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description
+
 func main() {
 	rootPath := "/home/cisco/pro/go/wepost"
 	// Load the .env file from the root directory
@@ -22,6 +39,7 @@ func main() {
 	maxOpenCon, _ := strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONN"))
 	maxIdleCon, _ := strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONN"))
 	maxIdletime := os.Getenv("DB_MAX_IDLE_TIME")
+	api := os.Getenv("APIURL")
 	dbConfig := DbConfig{Addr: addr, MaxOpenConn: maxOpenCon, MaxIdleConn: maxIdleCon, MaxIdleTime: maxIdletime}
 	ver := os.Getenv("VERSION")
 	env := os.Getenv("ENVIRONMENT")
@@ -30,6 +48,7 @@ func main() {
 		Database:    dbConfig,
 		Version:     ver,
 		Environment: env,
+		APIURL:      api,
 	}
 
 	db, err := db.NewConnection(
