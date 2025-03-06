@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -10,11 +9,13 @@ import (
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
 )
 
 type Application struct {
 	Config AppConfig
 	Store  store.Storage
+	Logger *zap.SugaredLogger
 }
 
 type AppConfig struct {
@@ -54,7 +55,7 @@ func (app *Application) Run(mux http.Handler) error {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("Server started at port %s", srv.Addr)
+	app.Logger.Infow("Server started", "address", srv.Addr, "env", app.Config.Environment)
 
 	return srv.ListenAndServe()
 }

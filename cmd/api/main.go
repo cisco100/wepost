@@ -8,6 +8,7 @@ import (
 	"github.com/cisco100/wepost/internal/db"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 //	@title			WePost API
@@ -51,6 +52,8 @@ func main() {
 		APIURL:      api,
 	}
 
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
 	db, err := db.NewConnection(
 		cfg.Database.Addr,
 		cfg.Database.MaxOpenConn,
@@ -58,17 +61,17 @@ func main() {
 		cfg.Database.MaxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 	defer db.Close()
-
-	log.Println("Database connection pool successfuly established")
+	logger.Info("Database connection pool successfuly established")
 
 	store := store.NewStorage(db)
 	app := &Application{
 		Config: cfg,
 		Store:  store,
+		Logger: logger,
 	}
 	mux := app.Mount()
-	log.Fatal(app.Run(mux))
+	logger.Fatal(app.Run(mux))
 }
