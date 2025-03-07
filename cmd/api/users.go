@@ -3,7 +3,9 @@ package main
 import (
 	"net/http"
 
+	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // GetUser godoc
@@ -31,5 +33,47 @@ func (app *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 	if err := JSONResponse(w, http.StatusFound, user); err != nil {
 		app.InternalServerError(w, r, err)
+	}
+}
+
+func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	type UserPayload struct {
+		Username string `json:"username" validate:"required,max=100"`
+		Email    string `json:"email" validate:"required email,max=255"`
+		Password string `json:"password" validate:"min=3,max=72"`
+	}
+
+	var payload UserPayload
+
+	if err := ReadJSON(w, r, &payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+	if err := Validate.Struct(payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+
+	user := &store.User{
+		ID:       uuid.New().String(),
+		Username: payload.Username,
+		Email:    payload.Email,
+	}
+
+	if err := user.Password.Set(payload.Password); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
+	if err := app.Store.User.CreateAndInvite(ctx, user, uuid.New().String()); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
+	if err := JSONResponse(w, http.StatusOK, nil); err != nil {
+		app.InternalServerError(w, r, err)
+		return
 	}
 }

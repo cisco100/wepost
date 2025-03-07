@@ -24,6 +24,7 @@ type Storage struct {
 	}
 	User interface {
 		Create(context.Context, *User) error
+		CreateAndInvite(context.Context, *User, string) error
 		GetUserById(context.Context, string) (*User, error)
 	}
 

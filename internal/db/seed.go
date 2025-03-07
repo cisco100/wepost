@@ -524,7 +524,7 @@ func GenerateUSer(num int) []*store.User {
 			ID:       GenerateUUID(),
 			Username: username[i%len(username)] + fmt.Sprintf("%d", i),
 			Email:    username[i%len(username)] + fmt.Sprintf("%d", i) + "@example.com",
-			Password: username[i%len(username)] + fmt.Sprintf("%d", i),
+			Password: store.Password{},
 		}
 	}
 	return users

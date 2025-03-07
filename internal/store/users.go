@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserStore struct {
@@ -30,6 +32,12 @@ func (us *UserStore) Create(ctx context.Context, user *User) error {
 		return err
 	}
 
+	return nil
+}
+
+func (us *UserStore) CreateAndInvite(ctx context.Context, user *User, token string) error {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 	return nil
 }
 
@@ -61,4 +69,14 @@ func (us *UserStore) GetUserById(ctx context.Context, userID string) (*User, err
 
 	return &user, nil
 
+}
+func (pass *Password) Set(plainText string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(plainText), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	pass.PlainText = &plainText
+	pass.Hash = hash
+	return nil
 }
