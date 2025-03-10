@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/cisco100/wepost/internal/db"
 	"github.com/cisco100/wepost/internal/store"
@@ -41,6 +42,7 @@ func main() {
 	maxIdleCon, _ := strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONN"))
 	maxIdletime := os.Getenv("DB_MAX_IDLE_TIME")
 	api := os.Getenv("APIURL")
+	mail := MailConfig{InviteExpiry: time.Hour * 24} //  a day
 	dbConfig := DbConfig{Addr: addr, MaxOpenConn: maxOpenCon, MaxIdleConn: maxIdleCon, MaxIdleTime: maxIdletime}
 	ver := os.Getenv("VERSION")
 	env := os.Getenv("ENVIRONMENT")
@@ -50,6 +52,7 @@ func main() {
 		Version:     ver,
 		Environment: env,
 		APIURL:      api,
+		Mail:        mail,
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()

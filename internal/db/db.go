@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/cisco100/wepost/internal/store"
 )
 
 func NewConnection(addr string, maxOpenCon int, maxIdleCon int, maxIdleTime string) (*sql.DB, error) {
@@ -18,7 +20,7 @@ func NewConnection(addr string, maxOpenCon int, maxIdleCon int, maxIdleTime stri
 	db.SetMaxIdleConns(maxIdleCon)
 	db.SetConnMaxIdleTime(duration)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), store.QueryTimeoutDuration)
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {

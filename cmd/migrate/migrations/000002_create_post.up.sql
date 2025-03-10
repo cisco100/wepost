@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS posts (
-    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    id VARCHAR(36) NOT NULL PRIMARY KEY UNIQUE,
     title VARCHAR(100) NOT NULL,
     content TEXT NOT NULL,
     tags TEXT[], -- Array of tags

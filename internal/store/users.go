@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -12,12 +13,12 @@ type UserStore struct {
 	db *sql.DB
 }
 
-func (us *UserStore) Create(ctx context.Context, user *User) error {
+func (us *UserStore) create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `INSERT INTO users(id,username,email,password) VALUES($1,$2,$3,$4) RETURNING id,created_at `
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
-	err := us.db.QueryRowContext(
+	err := tx.QueryRowContext(
 		ctx,
 		query,
 		user.ID,
@@ -29,15 +30,36 @@ func (us *UserStore) Create(ctx context.Context, user *User) error {
 		&user.CreatedAt,
 	)
 	if err != nil {
-		return err
+		switch {
+		case err.Error() == `pq:duplicate key value violates user constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case err.Error() == `pq:duplicate key value violates user constraint "users_username_key"`:
+			return ErrDuplicateUsername
+		default:
+			return err
+
+		}
 	}
 
 	return nil
 }
 
-func (us *UserStore) CreateAndInvite(ctx context.Context, user *User, token string) error {
+func (us *UserStore) CreateAndInvite(ctx context.Context, user *User, token string, invite_expiry time.Duration) error {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
+
+	WithTrxn(us.db, ctx, func(tx *sql.Tx) error {
+		if err := us.create(ctx, tx, user); err != nil {
+			return err
+		}
+
+		err := us.createUserInvite(ctx, tx, user.ID, token, invite_expiry)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	})
 	return nil
 }
 

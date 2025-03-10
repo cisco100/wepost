@@ -10,6 +10,8 @@ import (
 var (
 	ErrNotFound          = errors.New("resource not found")
 	ErrConflict          = errors.New("resource already exists")
+	ErrDuplicateEmail    = errors.New("a user with the same email already exists")
+	ErrDuplicateUsername = errors.New("a usser with the same username already exists")
 	QueryTimeoutDuration = time.Second * 5
 )
 
@@ -23,8 +25,8 @@ type Storage struct {
 		GetUserFeed(context.Context, string, PaginatedFeedQuery) ([]PostWithMetaData, error)
 	}
 	User interface {
-		Create(context.Context, *User) error
-		CreateAndInvite(context.Context, *User, string) error
+		create(context.Context, *sql.Tx, *User) error
+		CreateAndInvite(context.Context, *User, string, time.Duration) error
 		GetUserById(context.Context, string) (*User, error)
 	}
 

@@ -24,6 +24,11 @@ type AppConfig struct {
 	Version     string
 	Environment string
 	APIURL      string
+	Mail        MailConfig
+}
+
+type MailConfig struct {
+	InviteExpiry time.Duration
 }
 
 type DbConfig struct {

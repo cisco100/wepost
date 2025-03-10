@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/cisco100/wepost/internal/store"
@@ -39,6 +41,9 @@ func (app *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
+	plainToken := uuid.New().String()
+	hash := sha256.Sum256([]byte(plainToken))
+	hashToken := hex.EncodeToString(hash[:])
 	type UserPayload struct {
 		Username string `json:"username" validate:"required,max=100"`
 		Email    string `json:"email" validate:"required email,max=255"`
@@ -67,11 +72,21 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.Store.User.CreateAndInvite(ctx, user, uuid.New().String()); err != nil {
-		app.InternalServerError(w, r, err)
+	err := app.Store.User.CreateAndInvite(ctx, user, hashToken, app.Config.Mail.InviteExpiry)
+	if err != nil {
+		switch err {
+		case store.ErrDuplicateEmail:
+			app.BadRequestError(w, r, err)
+
+		case store.ErrDuplicateUsername:
+			app.BadRequestError(w, r, err)
+
+		default:
+			app.InternalServerError(w, r, err)
+
+		}
 		return
 	}
-
 	if err := JSONResponse(w, http.StatusOK, nil); err != nil {
 		app.InternalServerError(w, r, err)
 		return
