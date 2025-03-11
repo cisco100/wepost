@@ -2,5 +2,6 @@ CREATE TABLE IF NOT EXISTS user_invitations(
     token BYTEA NOT NULL PRIMARY KEY UNIQUE,
     user_id  VARCHAR(36) NOT NULL,
     invite_expiry TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
+    
 );

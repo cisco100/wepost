@@ -24,7 +24,7 @@ func (us *UserStore) create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.ID,
 		user.Username,
 		user.Email,
-		user.Password,
+		user.Password.Hash,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -39,6 +39,7 @@ func (us *UserStore) create(ctx context.Context, tx *sql.Tx, user *User) error {
 			return err
 
 		}
+
 	}
 
 	return nil

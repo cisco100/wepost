@@ -45,6 +45,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		r.Put("/users/getuser/{userID}/unfollow", app.UnFollowUser)
 
 		//Post URL
+		r.Post("/register/user", app.RegisterUser)
 
 		//Update URL
 

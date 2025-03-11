@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"log"
 )
 
 func WithTrxn(db *sql.DB, ctx context.Context, fxn func(*sql.Tx) error) error {
@@ -15,7 +16,9 @@ func WithTrxn(db *sql.DB, ctx context.Context, fxn func(*sql.Tx) error) error {
 
 	if err := fxn(tx); err != nil {
 		_ = tx.Rollback()
+		log.Println("Transaction rolled back:", err) // Debugging
 		return err
 	}
+	log.Println("Transaction committed successfully") // Debugging
 	return tx.Commit()
 }

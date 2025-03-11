@@ -46,7 +46,7 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	hashToken := hex.EncodeToString(hash[:])
 	type UserPayload struct {
 		Username string `json:"username" validate:"required,max=100"`
-		Email    string `json:"email" validate:"required email,max=255"`
+		Email    string `json:"email" validate:"required,email,max=255"`
 		Password string `json:"password" validate:"min=3,max=72"`
 	}
 
@@ -87,7 +87,7 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := JSONResponse(w, http.StatusOK, nil); err != nil {
+	if err := JSONResponse(w, http.StatusCreated, user); err != nil {
 		app.InternalServerError(w, r, err)
 		return
 	}
