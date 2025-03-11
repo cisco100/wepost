@@ -41,6 +41,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		r.Get("/users/feeds", app.GetUserFeed)
 
 		//Put URL
+		r.Put("/users/user/account/activate/{token}", app.ActivateUser)
 		r.Put("/users/getuser/{userID}/follow", app.FollowUser)
 		r.Put("/users/getuser/{userID}/unfollow", app.UnFollowUser)
 

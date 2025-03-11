@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"time"
 
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -87,8 +88,49 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := JSONResponse(w, http.StatusCreated, user); err != nil {
+
+	type UserToken struct {
+		User  *store.User `json:"user"`
+		Token string      `json:"token"`
+	}
+
+	var userToken = UserToken{
+		User:  user,
+		Token: plainToken,
+	}
+
+	if err := JSONResponse(w, http.StatusCreated, userToken); err != nil {
 		app.InternalServerError(w, r, err)
 		return
 	}
+}
+
+func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
+
+	token := chi.URLParam(r, "token")
+
+	ctx := r.Context()
+
+	err := app.Store.User.ActivateAccount(ctx, string(token), time.Now())
+
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.NotExistError(w, r, err)
+			return
+		default:
+			app.InternalServerError(w, r, err)
+			return
+		}
+	}
+
+	// type Message struct {
+	// 	Msg string `json:"msg"`
+	// }
+
+	if err := JSONResponse(w, http.StatusNoContent, ""); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
 }

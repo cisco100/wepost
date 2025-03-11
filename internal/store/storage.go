@@ -26,8 +26,12 @@ type Storage struct {
 	}
 	User interface {
 		create(context.Context, *sql.Tx, *User) error
+		updateUser(context.Context, *sql.Tx, *User) error
+		cleanInvite(context.Context, *sql.Tx, string) error
+		getUserFromInvite(context.Context, *sql.Tx, string, time.Time) (*User, error)
 		CreateAndInvite(context.Context, *User, string, time.Duration) error
 		GetUserById(context.Context, string) (*User, error)
+		ActivateAccount(context.Context, string, time.Time) error
 	}
 
 	Comment interface {

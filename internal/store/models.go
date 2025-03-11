@@ -4,8 +4,9 @@ type User struct {
 	ID        string   `json:"id"`
 	Username  string   `json:"username"`
 	Email     string   `json:"email"`
-	Password  Password `json:"_"`
+	Password  Password `json:"-"`
 	CreatedAt string   `json:"created_at"`
+	IsActive  bool     `json:"is_active"`
 }
 
 type Password struct {
