@@ -198,3 +198,15 @@ func (pass *Password) Set(plainText string) error {
 	pass.Hash = hash
 	return nil
 }
+
+func (us *UserStore) DeleteUser(ctx context.Context, userID string) error {
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+	query := `DELETE FROM users WHERE id=$1`
+
+	_, err := us.db.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}

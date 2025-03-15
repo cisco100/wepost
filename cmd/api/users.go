@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -99,6 +101,27 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Token: plainToken,
 	}
 
+	activationURL := fmt.Sprintf("%s/confirm/%s", app.Config.FrontendURL, plainToken)
+	isProdEnv := app.Config.Environment == "Production"
+	data := struct {
+		Username      string
+		ActivationURL string
+	}{
+		Username:      user.Username,
+		ActivationURL: activationURL,
+	}
+
+	if err := app.Mailer.Send(mailer.UserInvitesTEmplate, user.Username, user.Email, data, !isProdEnv); err != nil {
+		app.Logger.Errorw("error sending user activation email ::", "error", err)
+
+		if err := app.Store.User.DeleteUser(ctx, user.ID); err != nil {
+			app.Logger.Errorw("error deleting user  ::", "error", err)
+
+		}
+		app.InternalServerError(w, r, err)
+		return
+	}
+
 	if err := JSONResponse(w, http.StatusCreated, userToken); err != nil {
 		app.InternalServerError(w, r, err)
 		return
@@ -123,10 +146,6 @@ func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	// type Message struct {
-	// 	Msg string `json:"msg"`
-	// }
 
 	if err := JSONResponse(w, http.StatusNoContent, ""); err != nil {
 		app.InternalServerError(w, r, err)

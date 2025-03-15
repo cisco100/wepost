@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cisco100/wepost/docs"
+	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,6 +17,7 @@ type Application struct {
 	Config AppConfig
 	Store  store.Storage
 	Logger *zap.SugaredLogger
+	Mailer mailer.Client
 }
 
 type AppConfig struct {
@@ -25,10 +27,16 @@ type AppConfig struct {
 	Environment string
 	APIURL      string
 	Mail        MailConfig
+	FrontendURL string
 }
 
 type MailConfig struct {
+	SendGrid     SendgridConfig
 	InviteExpiry time.Duration
+}
+type SendgridConfig struct {
+	From   string
+	ApiKey string
 }
 
 type DbConfig struct {
