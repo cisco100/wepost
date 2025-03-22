@@ -11,7 +11,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 	router.Route("/v1/", func(r chi.Router) {
 		URL := fmt.Sprintf("%s/swagger/doc.json", app.Config.Address)
 		//=============INFO ROUTES===========//
-		r.Get("/info", app.Meta)
+		r.With(app.BasicAuthMiddleware()).Get("/info", app.Meta)
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL(URL),
 		))

@@ -82,6 +82,8 @@ func main() {
 	dbConfig := DbConfig{Addr: addr, MaxOpenConn: maxOpenCon, MaxIdleConn: maxIdleCon, MaxIdleTime: maxIdletime}
 	ver := os.Getenv("VERSION")
 	env := os.Getenv("ENVIRONMENT")
+	basicAuth := BasicAuthConfig{Username: os.Getenv("AUTH_BASIC_USER"), Password: os.Getenv("AUTH_BASIC_PASSWORD")}
+	auth := AuthConfig{BasicAuth: basicAuth}
 	cfg := AppConfig{
 		Address:     port,
 		Database:    dbConfig,
@@ -90,6 +92,7 @@ func main() {
 		APIURL:      api,
 		Mail:        mail,
 		FrontendURL: url,
+		Auth:        auth,
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()

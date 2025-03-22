@@ -28,6 +28,16 @@ type AppConfig struct {
 	APIURL      string
 	Mail        MailConfig
 	FrontendURL string
+	Auth        AuthConfig
+}
+
+type AuthConfig struct {
+	BasicAuth BasicAuthConfig
+}
+
+type BasicAuthConfig struct {
+	Username string
+	Password string
 }
 
 type MailConfig struct {
