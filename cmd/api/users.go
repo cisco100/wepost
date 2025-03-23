@@ -10,8 +10,18 @@ import (
 	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+type userKey string
+
+const userCtx userKey = "user"
+
+func getUserFromContext(r *http.Request) *store.User {
+	user, _ := r.Context().Value(userCtx).(*store.User)
+	return user
+}
 
 // GetUser godoc
 //
@@ -152,4 +162,53 @@ func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func (app *Application) TokenAuth(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	type TokenAuthPayload struct {
+		Email    string `json:"email" validate:"required,email,max=255"`
+		Password string `json:"password" validate:"min=3,max=72"`
+	}
+	var payload TokenAuthPayload
+	if err := ReadJSON(w, r, &payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.BadRequestError(w, r, err)
+		return
+	}
+
+	user, err := app.Store.User.GetUserByEmail(ctx, payload.Email)
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.UnauthorizedError(w, r, err) //Didnt use` NotFound because want to avoid enummeration attack`
+			return
+		default:
+			app.InternalServerError(w, r, err)
+			return
+		}
+	}
+	claims := jwt.MapClaims{
+		"subs": user.ID,
+		"exp":  time.Now().Add(app.Config.Auth.TokenAuth.Expiry).Unix(),
+		"iat":  time.Now().Unix(),
+		"nbf":  time.Now().Unix(),
+		"iss":  app.Config.Auth.TokenAuth.Issue,
+		"aud":  app.Config.Auth.TokenAuth.Audience,
+	}
+	token, err := app.Authenticator.GenerateToken(claims)
+	if err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
+	if err := JSONResponse(w, http.StatusCreated, token); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
 }

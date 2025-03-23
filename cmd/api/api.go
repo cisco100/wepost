@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cisco100/wepost/docs"
+	"github.com/cisco100/wepost/internal/authenticator"
 	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -14,10 +15,11 @@ import (
 )
 
 type Application struct {
-	Config AppConfig
-	Store  store.Storage
-	Logger *zap.SugaredLogger
-	Mailer mailer.Client
+	Config        AppConfig
+	Store         store.Storage
+	Logger        *zap.SugaredLogger
+	Mailer        mailer.Client
+	Authenticator authenticator.Authenticator
 }
 
 type AppConfig struct {
@@ -33,6 +35,14 @@ type AppConfig struct {
 
 type AuthConfig struct {
 	BasicAuth BasicAuthConfig
+	TokenAuth TokenAuthConfig
+}
+
+type TokenAuthConfig struct {
+	Secret   string
+	Audience string
+	Issue    string
+	Expiry   time.Duration
 }
 
 type BasicAuthConfig struct {

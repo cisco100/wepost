@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cisco100/wepost/internal/authenticator"
 	"github.com/cisco100/wepost/internal/db"
 	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
@@ -83,7 +84,11 @@ func main() {
 	ver := os.Getenv("VERSION")
 	env := os.Getenv("ENVIRONMENT")
 	basicAuth := BasicAuthConfig{Username: os.Getenv("AUTH_BASIC_USER"), Password: os.Getenv("AUTH_BASIC_PASSWORD")}
-	auth := AuthConfig{BasicAuth: basicAuth}
+	issuer := "wepost"
+	audience := "wepost"
+
+	token := TokenAuthConfig{Secret: os.Getenv("AUTH_TOKEN_SECRET"), Audience: audience, Issue: issuer, Expiry: time.Hour * 24 * 2}
+	auth := AuthConfig{BasicAuth: basicAuth, TokenAuth: token}
 	cfg := AppConfig{
 		Address:     port,
 		Database:    dbConfig,
@@ -110,11 +115,18 @@ func main() {
 	logger.Info("Database connection pool successfuly established")
 	mailer := mailer.NewSendGridMailer(cfg.Mail.SendGrid.From, cfg.Mail.SendGrid.ApiKey)
 	store := store.NewStorage(db)
+	jwtAuthenticator := authenticator.NewJWTAuthenticator(
+		cfg.Auth.TokenAuth.Secret,
+		cfg.Auth.TokenAuth.Audience,
+		cfg.Auth.TokenAuth.Issue,
+		cfg.Auth.TokenAuth.Expiry,
+	)
 	app := &Application{
-		Config: cfg,
-		Store:  store,
-		Logger: logger,
-		Mailer: mailer,
+		Config:        cfg,
+		Store:         store,
+		Logger:        logger,
+		Mailer:        mailer,
+		Authenticator: jwtAuthenticator,
 	}
 	mux := app.Mount()
 	logger.Fatal(app.Run(mux))

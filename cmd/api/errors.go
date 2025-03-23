@@ -6,31 +6,31 @@ import (
 )
 
 func (app *Application) InternalServerError(w http.ResponseWriter, r *http.Request, err error) {
-	app.Logger.Errorw("Internal Server Error", r.Method, "path::", r.URL.Path, "error::", err.Error())
+	log.Printf("Internal Server Error,method:: %s, path:: %s, error:: %s\n", r.Method, r.URL.Path, err)
 
 	WriteJSONError(w, http.StatusInternalServerError, "server encountered a problem")
 }
 
 func (app *Application) BadRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	app.Logger.Errorw("Bad Request Error", r.Method, "path::", r.URL.Path, "error::", err.Error())
+	log.Printf("Bad Rewuest Error,method:: %s, path:: %s, error:: %s\n", r.Method, r.URL.Path, err)
 
-	WriteJSONError(w, http.StatusBadRequest, err.Error())
+	WriteJSONError(w, http.StatusBadRequest, "bad request")
 }
 
 func (app *Application) NotExistError(w http.ResponseWriter, r *http.Request, err error) {
-	app.Logger.Errorw("Not Exist Error", r.Method, "path::", r.URL.Path, "error::", err.Error())
+	log.Printf("Not Exists Error,method:: %s, path:: %s, error:: %s\n", r.Method, r.URL.Path, err)
 
 	WriteJSONError(w, http.StatusBadRequest, "resource not exists")
 }
 
 func (app *Application) ConflictError(w http.ResponseWriter, r *http.Request, err error) {
-	app.Logger.Errorw("Conflict Error", r.Method, "path::", r.URL.Path, "error::", err.Error())
+	log.Printf("Conflict Error,method:: %s, path:: %s, error:: %s\n", r.Method, r.URL.Path, err)
 
 	WriteJSONError(w, http.StatusConflict, "resource not exists")
 }
 
 func (app *Application) UnauthorizedError(w http.ResponseWriter, r *http.Request, err error) {
-	app.Logger.Errorw("Unauthorized Error", r.Method, "path::", r.URL.Path, "error::", err.Error())
+	log.Printf("Unauthorized Error,method:: %s, path:: %s, error:: %s\n", r.Method, r.URL.Path, err)
 
 	WriteJSONError(w, http.StatusUnauthorized, "unauthorized")
 }

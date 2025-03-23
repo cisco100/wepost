@@ -24,7 +24,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		r.Get("/posts/all", app.GetAllPost)
 
 		//Post URL
-		r.Post("/posts/create-post", app.CreatePost)
+		r.With(app.AuthTokenMiddleware()).Post("/posts/create-post", app.CreatePost)
 		r.Post("/posts/comments/create-comment", app.CreateComment)
 
 		//Update URL
@@ -47,6 +47,7 @@ func RegisterRoutes(router chi.Router, app *Application) {
 
 		//Post URL
 		r.Post("/register/user", app.RegisterUser)
+		r.Post("/auth/token-auth", app.TokenAuth)
 
 		//Update URL
 
