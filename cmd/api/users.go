@@ -3,11 +3,9 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +14,22 @@ import (
 
 type userKey string
 
+type UserToken struct {
+	User  *store.User `json:"user"`
+	Token string      `json:"token"`
+}
+
+type UserPayload struct {
+	Username string `json:"username" validate:"required,max=100"`
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"min=3,max=72"`
+}
+
+type TokenAuthPayload struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"min=3,max=72"`
+}
+
 const userCtx userKey = "user"
 
 func getUserFromContext(r *http.Request) *store.User {
@@ -23,20 +37,16 @@ func getUserFromContext(r *http.Request) *store.User {
 	return user
 }
 
-// GetUser godoc
-//
-//	@Summary		Fetches a user profile
-//	@Description	Fetches a user profile by ID
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string	true	"User ID"
-//	@Success		200	{object}	store.User
-//	@Failure		400	{object}	error
-//	@Failure		404	{object}	error
-//	@Failure		500	{object}	error
-//	@Security		ApiKeyAuth
-//	@Router			/users/getuser/{id} [get]
+// @Summary		Get user by ID
+// @Description	Get user by ID
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			userID	path		string	true	"User ID"
+// @Success		200		{object}	store.User
+// @Failure		404		{object}	error
+// @Failure		500		{object}	error
+// @Router			/users/getuser/{userID} [get]
 func (app *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userID")
 	ctx := r.Context()
@@ -51,6 +61,16 @@ func (app *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary		Register a new user
+// @Description	Register a new user
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			user	body		UserPayload	true	"User Payload"
+// @Success		201		{object}	UserToken
+// @Failure		400		{object}	error
+// @Failure		500		{object}	error
+// @Router			/register/user [post]
 func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -111,26 +131,26 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Token: plainToken,
 	}
 
-	activationURL := fmt.Sprintf("%s/confirm/%s", app.Config.FrontendURL, plainToken)
-	isProdEnv := app.Config.Environment == "Production"
-	data := struct {
-		Username      string
-		ActivationURL string
-	}{
-		Username:      user.Username,
-		ActivationURL: activationURL,
-	}
+	// activationURL := fmt.Sprintf("%s/confirm/%s", app.Config.FrontendURL, plainToken)
+	// isProdEnv := app.Config.Environment == "Production"
+	// data := struct {
+	// 	Username      string
+	// 	ActivationURL string
+	// }{
+	// 	Username:      user.Username,
+	// 	ActivationURL: activationURL,
+	// }
 
-	if err := app.Mailer.Send(mailer.UserInvitesTEmplate, user.Username, user.Email, data, !isProdEnv); err != nil {
-		app.Logger.Errorw("error sending user activation email ::", "error", err)
+	// if err := app.Mailer.Send(mailer.UserInvitesTEmplate, user.Username, user.Email, data, !isProdEnv); err != nil {
+	// 	app.Logger.Errorw("error sending user activation email ::", "error", err)
 
-		if err := app.Store.User.DeleteUser(ctx, user.ID); err != nil {
-			app.Logger.Errorw("error deleting user  ::", "error", err)
+	// 	if err := app.Store.User.DeleteUser(ctx, user.ID); err != nil {
+	// 		app.Logger.Errorw("error deleting user  ::", "error", err)
 
-		}
-		app.InternalServerError(w, r, err)
-		return
-	}
+	// 	}
+	// 	app.InternalServerError(w, r, err)
+	// 	return
+	// }
 
 	if err := JSONResponse(w, http.StatusCreated, userToken); err != nil {
 		app.InternalServerError(w, r, err)
@@ -138,6 +158,16 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary		Activate a user account
+// @Description	Activate a user account
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			token	path	string	true	"Activation Token"
+// @Success		204
+// @Failure		404	{object}	error
+// @Failure		500	{object}	error
+// @Router			/users/user/account/activate/{token} [post]
 func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
 
 	token := chi.URLParam(r, "token")
@@ -164,6 +194,17 @@ func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// @Summary		Authenticate user and get token
+// @Description	Authenticate user and get token
+// @Tags			users
+// @Accept			json
+// @Produce		json
+// @Param			user	body		TokenAuthPayload	true	"User Credentials"
+// @Success		201		{string}	string				"JWT Token"
+// @Failure		400		{object}	error
+// @Failure		401		{object}	error
+// @Failure		500		{object}	error
+// @Router			/auth/token-auth [post]
 func (app *Application) TokenAuth(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()

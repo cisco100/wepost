@@ -1,14 +1,127 @@
 definitions:
+  main.FollowPayload:
+    properties:
+      follower_id:
+        type: string
+    type: object
+  main.PostPayload:
+    properties:
+      content:
+        minLength: 10
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  main.PostUpdatePayload:
+    properties:
+      content:
+        minLength: 10
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 100
+        minLength: 3
+        type: string
+    type: object
+  main.TokenAuthPayload:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 3
+        type: string
+    required:
+    - email
+    type: object
+  main.UserPayload:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 3
+        type: string
+      username:
+        maxLength: 100
+        type: string
+    required:
+    - email
+    - username
+    type: object
+  main.UserToken:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/store.User'
+    type: object
+  store.Comment:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      post_id:
+        type: string
+      user:
+        $ref: '#/definitions/store.User'
+      user_id:
+        type: string
+    type: object
+  store.Post:
+    properties:
+      coment:
+        items:
+          $ref: '#/definitions/store.Comment'
+        type: array
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/store.User'
+      user_id:
+        type: string
+      version:
+        type: integer
+    type: object
   store.User:
     properties:
-      _:
-        type: string
       created_at:
         type: string
       email:
         type: string
       id:
         type: string
+      is_active:
+        type: boolean
       username:
         type: string
     type: object
@@ -25,6 +138,93 @@ info:
   title: WePost API
   version: "1.0"
 paths:
+  /auth/token-auth:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get token
+      parameters:
+      - description: User Credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.TokenAuthPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: JWT Token
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Authenticate user and get token
+      tags:
+      - users
+  /posts/all:
+    get:
+      consumes:
+      - application/json
+      description: Fetches all posts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Post'
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches all posts
+      tags:
+      - posts
+  /posts/create-post:
+    post:
+      consumes:
+      - application/json
+      description: Creates a post
+      parameters:
+      - description: Post payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.PostPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/store.Post'
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Creates a post
+      tags:
+      - posts
   /posts/delete/{postID}:
     delete:
       consumes:
@@ -54,13 +254,13 @@ paths:
       summary: Deletes a post
       tags:
       - posts
-  /users/getuser/{id}:
+  /posts/getpost/{postID}:
     get:
       consumes:
       - application/json
-      description: Fetches a user profile by ID
+      description: Fetches a post by ID
       parameters:
-      - description: User ID
+      - description: Post ID
         in: path
         name: id
         required: true
@@ -71,7 +271,42 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/store.User'
+            $ref: '#/definitions/store.Post'
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches a post
+      tags:
+      - posts
+  /posts/post/update/{postID}:
+    put:
+      consumes:
+      - application/json
+      description: Updates a post by ID
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Post update payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.PostUpdatePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Post'
         "400":
           description: Bad Request
           schema: {}
@@ -83,14 +318,42 @@ paths:
           schema: {}
       security:
       - ApiKeyAuth: []
-      summary: Fetches a user profile
+      summary: Updates a post
       tags:
-      - users
-  /users/getuser/{userID}/follow:
-    put:
+      - posts
+  /register/user:
+    post:
       consumes:
       - application/json
-      description: Follows a user by ID
+      description: Register a new user
+      parameters:
+      - description: User Payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.UserToken'
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Register a new user
+      tags:
+      - users
+  /users/getuser/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Get user by ID
       parameters:
       - description: User ID
         in: path
@@ -100,19 +363,120 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: User followed
+        "200":
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/store.User'
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Get user by ID
+      tags:
+      - users
+  /users/getuser/{userID}/follow:
+    post:
+      consumes:
+      - application/json
+      description: Follow a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Follow payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.FollowPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
         "400":
-          description: User payload missing
+          description: Bad Request
           schema: {}
         "404":
-          description: User not found
+          description: Not Found
+          schema: {}
+        "409":
+          description: Conflict
+          schema: {}
+        "500":
+          description: Internal Server Error
           schema: {}
       security:
       - ApiKeyAuth: []
-      summary: Follows a user
+      summary: Follow a user
+      tags:
+      - followers
+  /users/getuser/{userID}/unfollow:
+    post:
+      consumes:
+      - application/json
+      description: Unfollow a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Unfollow payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.FollowPayload'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "409":
+          description: Conflict
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Unfollow a user
+      tags:
+      - followers
+  /users/user/account/activate/{token}:
+    post:
+      consumes:
+      - application/json
+      description: Activate a user account
+      parameters:
+      - description: Activation Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Activate a user account
       tags:
       - users
 securityDefinitions:
