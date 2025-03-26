@@ -10,6 +10,7 @@ import (
 func RegisterRoutes(router chi.Router, app *Application) {
 	router.Route("/v1/", func(r chi.Router) {
 		URL := fmt.Sprintf("%s/swagger/doc.json", app.Config.Address)
+
 		//=============INFO ROUTES===========//
 		r.With(app.BasicAuthMiddleware()).Get("/info", app.Meta)
 		r.Get("/swagger/*", httpSwagger.Handler(
@@ -17,43 +18,33 @@ func RegisterRoutes(router chi.Router, app *Application) {
 		))
 		//=============INFO ROUTES===========//
 
-		//=============POST ROUTES===========//
-		//Get URL
-
-		r.Get("/posts/getpost/{postID}", app.GetPostById)
-		r.Get("/posts/all", app.GetAllPost)
-
-		//Post URL
-		r.With(app.AuthTokenMiddleware()).Post("/posts/create-post", app.CreatePost)
-		r.Post("/posts/comments/create-comment", app.CreateComment)
-
-		//Update URL
-		r.Patch("/posts/post/update/{postID}", app.UpdatePost)
-
-		// Delete URL
-		r.Delete("/posts/delete/{postID}", app.DeletePost)
-
-		//=============POST ROUTES===========//
-
-		//=============USER ROUTES===========//
-		//Get URL
-		r.Get("/users/getuser/{userID}", app.GetUserById)
-		r.Get("/users/feeds", app.GetUserFeed)
-
-		//Put URL
-		r.Put("/users/user/account/activate/{token}", app.ActivateUser)
-		r.Put("/users/getuser/{userID}/follow", app.FollowUser)
-		r.Put("/users/getuser/{userID}/unfollow", app.UnFollowUser)
-
-		//Post URL
+		//=============PUBLIC ROUTES===========//
 		r.Post("/register/user", app.RegisterUser)
+		r.Put("/users/user/account/activate/{token}", app.ActivateUser)
 		r.Post("/auth/token-auth", app.TokenAuth)
+		//=============PUBLIC ROUTES===========//
 
-		//Update URL
+		//=============AUTHENTICATED ROUTES===========//
+		r.Group(func(r chi.Router) {
+			r.Use(app.PostsContextMiddleware)
+			r.Use(app.AuthTokenMiddleware())
 
-		// Delete URL
+			//=============POST ROUTES===========//
+			r.Post("/posts/create-post", app.CreatePost)
+			r.Post("/posts/comments/create-comment", app.CreateComment)
+			r.Patch("/posts/post/update/{postID}", app.CheckPostAuthorization("moderator", app.UpdatePost))
+			r.Delete("/posts/delete/{postID}", app.CheckPostAuthorization("admin", app.DeletePost))
+			r.Get("/posts/getpost/{postID}", app.GetPostById)
+			r.Get("/posts/all", app.GetAllPost)
+			//=============POST ROUTES===========//
 
-		//=============USER ROUTES===========//
+			//=============USER ROUTES===========//
+			r.Get("/users/getuser/{userID}", app.GetUserById)
+			r.Get("/users/feeds", app.GetUserFeed)
+			r.Put("/users/getuser/{userID}/follow", app.FollowUser)
+			r.Put("/users/getuser/{userID}/unfollow", app.UnFollowUser)
+			//=============USER ROUTES===========//
+		})
+		//=============AUTHENTICATED ROUTES===========//
 	})
-
 }

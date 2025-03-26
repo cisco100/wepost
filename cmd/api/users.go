@@ -12,8 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type userKey string
-
 type UserToken struct {
 	User  *store.User `json:"user"`
 	Token string      `json:"token"`
@@ -28,16 +26,6 @@ type UserPayload struct {
 type TokenAuthPayload struct {
 	Email    string `json:"email" validate:"required,email,max=255"`
 	Password string `json:"password" validate:"min=3,max=72"`
-}
-
-const userCtx userKey = "user"
-
-func getUserFromContext(r *http.Request) *store.User {
-	user, ok := r.Context().Value(userCtx).(*store.User)
-	if !ok {
-		return nil
-	}
-	return user
 }
 
 // @Summary		Get user by ID
@@ -101,6 +89,9 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		ID:       uuid.New().String(),
 		Username: payload.Username,
 		Email:    payload.Email,
+		Role: store.Role{
+			Name: "user",
+		},
 	}
 
 	if err := user.Password.Set(payload.Password); err != nil {

@@ -16,7 +16,9 @@ type UserStore struct {
 }
 
 func (us *UserStore) create(ctx context.Context, tx *sql.Tx, user *User) error {
-	query := `INSERT INTO users(id,username,email,password) VALUES($1,$2,$3,$4) RETURNING id,created_at `
+	query := `INSERT INTO users(id,username,email,password) VALUES($1,$2,$3,$4) 
+	(SELECT id FROM roles WHERE id=%5)
+	RETURNING id,created_at `
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -27,6 +29,7 @@ func (us *UserStore) create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.Username,
 		user.Email,
 		user.Password.Hash,
+		user.Role.Name,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -160,7 +163,10 @@ func (us *UserStore) getUserFromInvite(ctx context.Context, tx *sql.Tx, token st
 }
 
 func (us *UserStore) GetUserById(ctx context.Context, userID string) (*User, error) {
-	query := `SELECT id,username,email,created_at FROM users WHERE id=$1 AND is_active=true`
+	query := `SELECT id,username,email,created_at ,roles.*
+	FROM users 
+	JOIN roles ON (users.role_id=roles.id)
+	WHERE id=$1 AND is_active=true`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()

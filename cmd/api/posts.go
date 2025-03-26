@@ -177,7 +177,7 @@ func (app *Application) DeletePost(w http.ResponseWriter, r *http.Request) {
 // @Failure		404		{object}	error
 // @Failure		500		{object}	error
 // @Security		ApiKeyAuth
-// @Router			/posts/post/update/{postID} [put]
+// @Router			/posts/post/update/{postID} [patch]
 func (app *Application) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	idParams := chi.URLParam(r, "postID")
 	ctx := r.Context()

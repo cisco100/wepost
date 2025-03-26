@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/cisco100/wepost/internal/store"
+	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -54,6 +57,28 @@ func (app *Application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
+func (app *Application) PostsContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idParam := chi.URLParam(r, "postID")
+
+		ctx := r.Context()
+
+		post, err := app.Store.Post.GetPostById(ctx, idParam)
+		if err != nil {
+			switch {
+			case errors.Is(err, store.ErrNotFound):
+				app.NotExistError(w, r, err)
+			default:
+				app.InternalServerError(w, r, err)
+			}
+			return
+		}
+
+		ctx = context.WithValue(ctx, postCtx, post)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func (app *Application) BasicAuthMiddleware() func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
@@ -89,4 +114,42 @@ func (app *Application) BasicAuthMiddleware() func(http.Handler) http.Handler {
 		})
 	}
 
+}
+
+func (app *Application) CheckPostAuthorization(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		user := getUserFromContext(r)
+		post := getPostFromContext(r)
+
+		if user.ID == post.UserID {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		allowed, err := app.checkRolePrecedent(r.Context(), user, requiredRole)
+		if err != nil {
+			app.InternalServerError(w, r, err)
+			return
+		}
+
+		if !allowed {
+			app.ForbiddenError(w, r, err)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+
+	})
+
+}
+
+func (app *Application) checkRolePrecedent(ctx context.Context, user *store.User, roleName string) (bool, error) {
+
+	role, err := app.Store.Role.GetRoleByName(ctx, roleName)
+	if err != nil {
+		return false, err
+	}
+	return user.Role.Level >= role.Level, nil
 }

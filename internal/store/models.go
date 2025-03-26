@@ -7,6 +7,7 @@ type User struct {
 	Password  Password `json:"-"`
 	CreatedAt string   `json:"created_at"`
 	IsActive  bool     `json:"is_active"`
+	Role      Role     `json:"role"`
 }
 
 type Password struct {
@@ -44,4 +45,11 @@ type Follower struct {
 type PostWithMetaData struct {
 	Post
 	CountComment int64 `json:"count_comment"`
+}
+
+type Role struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Level       int    `json:"level"`
+	Description string `json:"description"`
 }
