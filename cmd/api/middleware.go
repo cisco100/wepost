@@ -16,7 +16,7 @@ func (app *Application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 
 			authHeader := r.Header.Get("Authorization")
 
-			if authHeader == "" {
+			if authHeader == " " {
 				app.UnauthorizedError(w, r, fmt.Errorf("authorization header is missing"))
 				return
 			}
@@ -35,11 +35,11 @@ func (app *Application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 				app.UnauthorizedError(w, r, err)
 				return
 			}
-			userID, ok := jwtToken.Claims.(jwt.MapClaims)["sub"].(string)
-			if !ok {
-				app.UnauthorizedError(w, r, fmt.Errorf("can't get user"))
-				return
-			}
+
+			claims, _ := jwtToken.Claims.(jwt.MapClaims)
+
+			userID := claims["subs"].(string)
+
 			ctx := r.Context()
 			user, err := app.Store.User.GetUserById(ctx, userID)
 			if err != nil {

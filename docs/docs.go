@@ -506,7 +506,7 @@ const docTemplate = `{
             }
         },
         "/users/user/account/activate/{token}": {
-            "post": {
+            "put": {
                 "description": "Activate a user account",
                 "consumes": [
                     "application/json"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -51,7 +52,12 @@ func (app *Application) CreatePost(w http.ResponseWriter, r *http.Request) {
 		app.BadRequestError(w, r, err)
 		return
 	}
+
 	user := getUserFromContext(r)
+	if user == nil {
+		app.UnauthorizedError(w, r, fmt.Errorf("unauthorized from ctx"))
+		return
+	}
 
 	post := &store.Post{
 		ID:      uuid.New().String(),

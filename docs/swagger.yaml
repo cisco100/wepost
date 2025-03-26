@@ -455,7 +455,7 @@ paths:
       tags:
       - followers
   /users/user/account/activate/{token}:
-    post:
+    put:
       consumes:
       - application/json
       description: Activate a user account

@@ -33,7 +33,10 @@ type TokenAuthPayload struct {
 const userCtx userKey = "user"
 
 func getUserFromContext(r *http.Request) *store.User {
-	user, _ := r.Context().Value(userCtx).(*store.User)
+	user, ok := r.Context().Value(userCtx).(*store.User)
+	if !ok {
+		return nil
+	}
 	return user
 }
 
@@ -167,7 +170,7 @@ func (app *Application) RegisterUser(w http.ResponseWriter, r *http.Request) {
 // @Success		204
 // @Failure		404	{object}	error
 // @Failure		500	{object}	error
-// @Router			/users/user/account/activate/{token} [post]
+// @Router			/users/user/account/activate/{token} [put]
 func (app *Application) ActivateUser(w http.ResponseWriter, r *http.Request) {
 
 	token := chi.URLParam(r, "token")
