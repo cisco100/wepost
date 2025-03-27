@@ -9,6 +9,7 @@ import (
 	"github.com/cisco100/wepost/internal/authenticator"
 	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
+	"github.com/cisco100/wepost/internal/store/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -20,6 +21,7 @@ type Application struct {
 	Logger        *zap.SugaredLogger
 	Mailer        mailer.Client
 	Authenticator authenticator.Authenticator
+	Cache         cache.Storage
 }
 
 type AppConfig struct {
@@ -31,6 +33,14 @@ type AppConfig struct {
 	Mail        MailConfig
 	FrontendURL string
 	Auth        AuthConfig
+	Redis       RedisConfig
+}
+
+type RedisConfig struct {
+	Addr     string
+	Password string
+	Database int
+	Enabled  bool
 }
 
 type AuthConfig struct {

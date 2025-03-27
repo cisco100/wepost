@@ -10,6 +10,8 @@ import (
 	"github.com/cisco100/wepost/internal/db"
 	"github.com/cisco100/wepost/internal/mailer"
 	"github.com/cisco100/wepost/internal/store"
+	"github.com/cisco100/wepost/internal/store/cache"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
@@ -38,6 +40,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file from root: %v", err)
 	}
+
+	raddr := os.Getenv("REDIS_ADDR")
+	rpwd := os.Getenv("REDIS_PASSWORD")
+	rdbse, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+	renb, _ := strconv.ParseBool(os.Getenv("REDIS_ENABLED"))
+
 	port := os.Getenv("ADDR")
 	addr := os.Getenv("DB_ADDR")
 	maxOpenCon, _ := strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONN"))
@@ -58,6 +66,7 @@ func main() {
 
 	token := TokenAuthConfig{Secret: os.Getenv("AUTH_TOKEN_SECRET"), Audience: audience, Issue: issuer, Expiry: time.Hour * 24 * 2}
 	auth := AuthConfig{BasicAuth: basicAuth, TokenAuth: token}
+	red := RedisConfig{Addr: raddr, Password: rpwd, Database: rdbse, Enabled: renb}
 	cfg := AppConfig{
 		Address:     port,
 		Database:    dbConfig,
@@ -67,6 +76,7 @@ func main() {
 		Mail:        mail,
 		FrontendURL: url,
 		Auth:        auth,
+		Redis:       red,
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()
@@ -84,6 +94,14 @@ func main() {
 	logger.Info("Database connection pool successfuly established")
 	mailer := mailer.NewSendGridMailer(cfg.Mail.SendGrid.From, cfg.Mail.SendGrid.ApiKey)
 	store := store.NewStorage(db)
+
+	var rdb *redis.Client
+	if cfg.Redis.Enabled {
+		rdb = cache.NewRedisConnection(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.Database)
+		logger.Info("Redis connection pool  successfuly establshed")
+	}
+	cache := cache.NewRedisStorage(rdb)
+
 	jwtAuthenticator := authenticator.NewJWTAuthenticator(
 		cfg.Auth.TokenAuth.Secret,
 		cfg.Auth.TokenAuth.Audience,
@@ -96,6 +114,7 @@ func main() {
 		Logger:        logger,
 		Mailer:        mailer,
 		Authenticator: jwtAuthenticator,
+		Cache:         cache,
 	}
 	mux := app.Mount()
 	logger.Fatal(app.Run(mux))

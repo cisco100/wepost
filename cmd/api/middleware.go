@@ -44,7 +44,8 @@ func (app *Application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 			userID := claims["subs"].(string)
 
 			ctx := r.Context()
-			user, err := app.Store.User.GetUserById(ctx, userID)
+
+			user, err := app.getUser(ctx, userID)
 			if err != nil {
 				app.UnauthorizedError(w, r, err)
 				return
@@ -152,4 +153,23 @@ func (app *Application) checkRolePrecedent(ctx context.Context, user *store.User
 		return false, err
 	}
 	return user.Role.Level >= role.Level, nil
+}
+func (app *Application) getUser(ctx context.Context, userID string) (*store.User, error) {
+	user, err := app.Cache.Users.Get(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+
+		user, err := app.Store.User.GetUserById(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		if err := app.Cache.Users.Set(ctx, user); err != nil {
+			return nil, err
+		}
+	}
+	return user, nil
+
 }
