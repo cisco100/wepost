@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cisco100/wepost/docs"
@@ -98,7 +102,34 @@ func (app *Application) Run(mux http.Handler) error {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	shutdown := make(chan error)
+
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		s := <-quit
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		app.Logger.Infow("Signal caught", "signal", s.String())
+		shutdown <- srv.Shutdown(ctx)
+
+	}()
+
 	app.Logger.Infow("Server started", "address", srv.Addr, "env", app.Config.Environment)
 
-	return srv.ListenAndServe()
+	err := srv.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	err = <-shutdown
+	if err != nil {
+		return err
+	}
+
+	app.Logger.Infow("Server started", "address", srv.Addr, "env", app.Config.Environment)
+
+	return nil
 }
